@@ -1,9 +1,10 @@
 #!/bin/sh
 
-#/ Usage: certified [--bits=<bits>] [--ca] [--ca-password=<ca-password>] [--days=<days>] [--db=<db>] [--encrypt] [--issuer=<issuer>] [--issuer-name=<issuer-name>] [--name=<name>] [--no-sign] [--password=<password>] [--revoke] [--self-signed] [C=<country>] [ST=<state>] [L=<locality>] [O=<organization>] CN=<common-name> [+<dns>[...]] [+<ip>[...]]
+#/ Usage: certified [--bits=<bits>] [--ca] [--ca-password=<ca-password>] [--combined-cert-file=<file>] [--days=<days>] [--db=<db>] [--encrypt] [--issuer=<issuer>] [--issuer-name=<issuer-name>] [--name=<name>] [--no-sign] [--password=<password>] [--revoke] [--self-signed] [C=<country>] [ST=<state>] [L=<locality>] [O=<organization>] CN=<common-name> [+<dns>[...]] [+<ip>[...]]
 #/   --bits=<bits>               bits to use for the private key (defaults to 2048)
 #/   --ca                        generate a CA certificate
 #/   --ca-password=<ca-password> password for the CA private key
+#/   --combined-cert-file=<file> out file for combination of server and intermediate certs
 #/   --days=<days>               days until the certificate expires (defaults to 365)
 #/   --db=<db>                   OpenSSL database directory
 #/   --encrypt                   encrypt the private key (with <password>, if given)
@@ -36,6 +37,8 @@ do
         --ca) CA="--ca" shift;;
         --ca-password) CA_PASSWORD="$2" shift 2;;
         --ca-password=*) CA_PASSWORD="$(echo "$1" | cut -d"=" -f"2-")" shift;;
+        --combined-cert-file) COMBINED_CERT="$2" shift 2;;
+        --combined-cert-file=*) COMBINED_CERT="$(echo "$1" | cut -d"=" -f"2-")" shift;;
         --days) DAYS="$2" shift 2;;
         --days=*) DAYS="$(echo "$1" | cut -d"=" -f"2-")" shift;;
         --db) DB="$2" shift 2;;
@@ -106,4 +109,9 @@ else
     log "install this certificate chain on your server"
     cat "certs/$NAME.crt"
     cat "certs/$ISSUER_NAME.crt"
+
+    if [ ! -z ${COMBINED_CERT} ]; then
+        cp "certs/$NAME.crt" "${COMBINED_CERT}"
+        cat "certs/$ISSUER_NAME.crt" | tee -a "${COMBINED_CERT}"
+    fi
 fi
